@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+
+struct FlagImage: View{
+    var text: String
+    
+    var body: some View{
+        Image(text)
+            .renderingMode(.original)
+            .clipShape(Capsule())
+            .shadow(radius: 5)
+    }
+}
 struct ContentView: View {
     
     @State private var showingScore = false
@@ -17,6 +28,12 @@ struct ContentView: View {
     
     @State private var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Russia", "Spain", "UK", "US"].shuffled()
     @State private var correctAnswer = Int.random(in: 0...2)
+    
+    @State private var selectedNumber = 0
+    @State private var correctFlag = false
+    @State private var wrongFlag = false
+    @State private var makeFlagOpaque = false
+    
     
     var body: some View {
         ZStack {
@@ -39,15 +56,19 @@ struct ContentView: View {
                         Text(countries[correctAnswer])
                             .font(.largeTitle.weight(.semibold))
                     }
-                        ForEach(0..<3){number in
-                            Button{
+                    ForEach(0..<3 ) { number in
+                        Button(action: {
+                            withAnimation {
                                 flagTapped(number)
-                            }label: {
-                                Image(countries[number])
-                                    .renderingMode(.original)
-                                    .clipShape(Capsule())
-                                    .shadow(radius: 5)
                             }
+                        }){
+                            Image(countries[number])
+                                .renderingMode(.original)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(Color.black, lineWidth: 1))
+                                .shadow(color: .black, radius: 2)
+                        }.rotation3DEffect(.degrees(correctFlag && selectedNumber == number ? 360 : 0), axis: (x: 0, y: 1, z: 0))
+                            .opacity(self.makeFlagOpaque && !(self.selectedNumber == number) ? 0.25 : 1)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -80,14 +101,17 @@ struct ContentView: View {
     }
     
     func flagTapped(_ number: Int){
+        selectedNumber = number
         if round == 8{
             isRestart = true
         }else{
             if number == correctAnswer{
                 scoreTitle = "Correct"
                 score += 1
+                correctFlag = true
             } else {
                 scoreTitle = "Wrong! That's the flag of \(countries[number])"
+                wrongFlag = true
             }
             round += 1
             showingScore = true
@@ -97,12 +121,17 @@ struct ContentView: View {
     func askQuestion(){
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        correctFlag = false
+        wrongFlag = false
+
     }
     func restartGame(){
         score = 0
         round = 0
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        correctFlag = false
+        wrongFlag = false
     }
 }
 struct ContentView_Previews: PreviewProvider {
